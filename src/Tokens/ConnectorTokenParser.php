@@ -27,17 +27,26 @@ final class ConnectorTokenParser
             throw new \InvalidArgumentException('invalid_token_payload');
         }
         foreach (['app_id', 'key_id', 'secret', 'base_url'] as $field) {
+<<<<<<< HEAD
             if (!isset($payload[$field]) || !is_string($payload[$field]) || trim($payload[$field]) === '') {
                 throw new \InvalidArgumentException('missing_' . $field);
             }
         }
         if (!filter_var($payload['base_url'], FILTER_VALIDATE_URL)) {
+=======
+            if (trim((string) ($payload[$field] ?? '')) === '') {
+                throw new \InvalidArgumentException('missing_' . $field);
+            }
+        }
+        if (!filter_var((string) $payload['base_url'], FILTER_VALIDATE_URL)) {
+>>>>>>> 9d7debebb9a2e2fc3c62c12b065f871e4a3b4a0c
             throw new \InvalidArgumentException('invalid_base_url');
         }
         $expires = isset($payload['expires_at']) ? (int) $payload['expires_at'] : null;
         if ($expires !== null && $expires <= ($now ?? time())) {
             throw new \InvalidArgumentException('token_expired');
         }
+<<<<<<< HEAD
         $payload['scopes'] = self::stringList($payload['scopes'] ?? [], 'scopes');
         $payload['allowed_ips'] = self::stringList($payload['allowed_ips'] ?? [], 'allowed_ips');
         return $payload;
@@ -61,4 +70,10 @@ final class ConnectorTokenParser
         }
         return $out;
     }
+=======
+        $payload['scopes'] = array_values(array_filter(array_map('strval', (array) ($payload['scopes'] ?? []))));
+        $payload['allowed_ips'] = array_values(array_filter(array_map('strval', (array) ($payload['allowed_ips'] ?? []))));
+        return $payload;
+    }
+>>>>>>> 9d7debebb9a2e2fc3c62c12b065f871e4a3b4a0c
 }
