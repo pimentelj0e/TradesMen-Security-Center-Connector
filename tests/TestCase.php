@@ -6,7 +6,7 @@ namespace Tests;
 
 use RuntimeException;
 
-final class TestCase
+class TestCase
 {
     private int $assertions = 0;
 
