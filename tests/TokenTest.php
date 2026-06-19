@@ -51,7 +51,6 @@ final class TokenTest extends TestCase
         }
         $this->assertTrue(false, 'expired token must throw');
     }
-<<<<<<< HEAD
 
     public function testRequiredFieldsMustBeStrings(): void
     {
@@ -108,6 +107,4 @@ final class TokenTest extends TestCase
         }
         $this->assertTrue(false, 'associative allowed IPs must throw');
     }
-=======
->>>>>>> 9d7debebb9a2e2fc3c62c12b065f871e4a3b4a0c
 }
