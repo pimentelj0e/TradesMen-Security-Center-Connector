@@ -18,16 +18,30 @@ final class HeartbeatClient
 
     public function send(string $securityCenterBaseUrl, string $appId, string $keyId, string $secret, array $payload, int $timeoutSeconds = 10): array
     {
-        $path = '/api/ingest/heartbeat';
-        $url = rtrim($securityCenterBaseUrl, '/') . $path;
+        return $this->sendToUrl(
+            rtrim($securityCenterBaseUrl, '/') . '/api/ingest/heartbeat',
+            $appId,
+            $keyId,
+            $secret,
+            $payload,
+            $timeoutSeconds,
+        );
+    }
+
+    public function sendToUrl(string $targetUrl, string $appId, string $keyId, string $secret, array $payload, int $timeoutSeconds = 10): array
+    {
         $body = json_encode($payload, JSON_UNESCAPED_SLASHES);
         if (!is_string($body)) {
             $body = '{}';
         }
-        $headers = HmacSigner::headers($appId, $keyId, $secret, 'POST', $path, $body, ($this->clock)(), ($this->nonceFactory)());
+        $parsed = parse_url($targetUrl);
+        $path = (string) ($parsed['path'] ?? '/');
+        $query = isset($parsed['query']) ? '?' . $parsed['query'] : '';
+        $pathWithQuery = $path . $query;
+        $headers = HmacSigner::headers($appId, $keyId, $secret, 'POST', $pathWithQuery, $body, ($this->clock)(), ($this->nonceFactory)());
         $headers['Content-Type'] = 'application/json';
         $headers['Accept'] = 'application/json';
 
-        return $this->http->postJson($url, $headers, $body, $timeoutSeconds);
+        return $this->http->postJson($targetUrl, $headers, $body, $timeoutSeconds);
     }
 }

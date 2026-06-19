@@ -33,4 +33,26 @@ final class HeartbeatClientTest extends TestCase
         $this->assertSame('1700000000', $transport->calls[0]['headers'][Headers::TIMESTAMP], 'signed timestamp');
         $this->assertSame('nonce-heartbeat', $transport->calls[0]['headers'][Headers::NONCE], 'signed nonce');
     }
+
+    public function testHeartbeatCanPostToFullIngestUrl(): void
+    {
+        $transport = new class implements HttpClientInterface {
+            public array $calls = [];
+
+            public function postJson(string $url, array $headers, string $jsonBody, int $timeoutSeconds): array
+            {
+                $this->calls[] = compact('url', 'headers', 'jsonBody', 'timeoutSeconds');
+
+                return ['status' => 202, 'body' => '{"ok":true}'];
+            }
+        };
+
+        $client = new HeartbeatClient($transport, static fn (): int => 1700000000, static fn (): string => 'nonce-full-url');
+        $result = $client->sendToUrl('https://security.example.com/custom/ingest?source=network', 'tradesmen-network', 'key-1', 'secret-1', ['status' => 'ok'], 7);
+
+        $this->assertSame(202, $result['status'], 'heartbeat response status');
+        $this->assertSame('https://security.example.com/custom/ingest?source=network', $transport->calls[0]['url'], 'full URL preserved');
+        $this->assertSame('tradesmen-network', $transport->calls[0]['headers'][Headers::APP_ID], 'signed app id');
+        $this->assertSame('nonce-full-url', $transport->calls[0]['headers'][Headers::NONCE], 'signed nonce');
+    }
 }
