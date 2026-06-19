@@ -55,7 +55,7 @@ For a root PHP app:
     }
   ],
   "require": {
-    "tradesmen/security-center-connector": "*"
+    "tradesmen/security-center-connector": "dev-main"
   }
 }
 ```
@@ -72,7 +72,7 @@ For backend subdirectories such as `TradesMen-Tools/backend`, use:
     }
   ],
   "require": {
-    "tradesmen/security-center-connector": "*"
+    "tradesmen/security-center-connector": "dev-main"
   }
 }
 ```
