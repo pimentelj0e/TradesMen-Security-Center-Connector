@@ -51,4 +51,60 @@ final class TokenTest extends TestCase
         }
         $this->assertTrue(false, 'expired token must throw');
     }
+
+    public function testRequiredFieldsMustBeStrings(): void
+    {
+        $token = ConnectorTokenFactory::issue([
+            'app_id' => ['tradesmen-tools'],
+            'base_url' => 'https://tools.example.com',
+            'key_id' => 'key',
+            'secret' => 'secret',
+        ]);
+
+        try {
+            ConnectorTokenParser::parse($token, 1700000001);
+        } catch (\InvalidArgumentException $e) {
+            $this->assertSame('missing_app_id', $e->getMessage(), 'non-string app id rejected');
+            return;
+        }
+        $this->assertTrue(false, 'non-string app id must throw');
+    }
+
+    public function testScopeAndAllowedIpListsMustContainOnlyStrings(): void
+    {
+        $token = ConnectorTokenFactory::issue([
+            'app_id' => 'tradesmen-tools',
+            'base_url' => 'https://tools.example.com',
+            'key_id' => 'key',
+            'secret' => 'secret',
+            'scopes' => ['health:read', ['status:read']],
+        ]);
+
+        try {
+            ConnectorTokenParser::parse($token, 1700000001);
+        } catch (\InvalidArgumentException $e) {
+            $this->assertSame('invalid_scopes', $e->getMessage(), 'nested scope rejected');
+            return;
+        }
+        $this->assertTrue(false, 'nested scope must throw');
+    }
+
+    public function testAllowedIpsMustBeAList(): void
+    {
+        $token = ConnectorTokenFactory::issue([
+            'app_id' => 'tradesmen-tools',
+            'base_url' => 'https://tools.example.com',
+            'key_id' => 'key',
+            'secret' => 'secret',
+            'allowed_ips' => ['office' => '203.0.113.10'],
+        ]);
+
+        try {
+            ConnectorTokenParser::parse($token, 1700000001);
+        } catch (\InvalidArgumentException $e) {
+            $this->assertSame('invalid_allowed_ips', $e->getMessage(), 'associative allowed IPs rejected');
+            return;
+        }
+        $this->assertTrue(false, 'associative allowed IPs must throw');
+    }
 }
