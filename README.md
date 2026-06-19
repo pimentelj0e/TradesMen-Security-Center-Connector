@@ -37,3 +37,42 @@ Run tests:
 ```bash
 composer test
 ```
+
+## Local path repository usage
+
+During rollout, a sibling app repo can consume this package with a Composer path
+repository.
+
+For a root PHP app:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../TradesMen-Security-Center-Connector",
+      "options": { "symlink": true }
+    }
+  ],
+  "require": {
+    "tradesmen/security-center-connector": "*"
+  }
+}
+```
+
+For backend subdirectories such as `TradesMen-Tools/backend`, use:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../../TradesMen-Security-Center-Connector",
+      "options": { "symlink": true }
+    }
+  ],
+  "require": {
+    "tradesmen/security-center-connector": "*"
+  }
+}
+```
