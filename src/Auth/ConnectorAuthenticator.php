@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace TradesMen\SecurityCenterConnector\Auth;
 use TradesMen\SecurityCenterConnector\Contracts\AccessLogInterface;
+use TradesMen\SecurityCenterConnector\Contracts\ClockInterface;
 use TradesMen\SecurityCenterConnector\Contracts\ConnectorConfigInterface;
 use TradesMen\SecurityCenterConnector\Contracts\CredentialStoreInterface;
 use TradesMen\SecurityCenterConnector\Contracts\NonceStoreInterface;
@@ -11,13 +12,12 @@ use TradesMen\SecurityCenterConnector\Protocol\HmacVerifier;
 
 final class ConnectorAuthenticator
 {
-    /** @param callable():int $clock */
     public function __construct(
         private readonly ConnectorConfigInterface $config,
         private readonly CredentialStoreInterface $credentials,
         private readonly NonceStoreInterface $nonces,
         private readonly AccessLogInterface $logs,
-        private readonly mixed $clock,
+        private readonly ClockInterface $clock,
     ) {}
 
     public function authenticate(string $method, string $pathWithQuery, array $headers, string $rawBody, ?string $ipAddress, ?string $userAgent): VerificationResult
@@ -57,7 +57,7 @@ final class ConnectorAuthenticator
             return VerificationResult::deny(400, 'malformed_header', $appId, $keyId);
         }
 
-        $now = ($this->clock)();
+        $now = $this->clock->now();
         if (abs($now - (int) $timestamp) > $this->config->signatureTtlSeconds()) {
             return VerificationResult::deny(401, 'stale_timestamp', $appId, $keyId);
         }

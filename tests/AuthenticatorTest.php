@@ -6,6 +6,7 @@ namespace Tests;
 
 use TradesMen\SecurityCenterConnector\Auth\ConnectorAuthenticator;
 use TradesMen\SecurityCenterConnector\Auth\Credential;
+use TradesMen\SecurityCenterConnector\Contracts\ClockInterface;
 use TradesMen\SecurityCenterConnector\Contracts\ConnectorConfigInterface;
 use TradesMen\SecurityCenterConnector\Protocol\HmacSigner;
 use TradesMen\SecurityCenterConnector\Support\ArrayAccessLog;
@@ -22,7 +23,7 @@ final class AuthenticatorTest extends TestCase
         ]);
         $nonces = new InMemoryNonceStore();
         $logs = new ArrayAccessLog();
-        $auth = new ConnectorAuthenticator($config, $credentials, $nonces, $logs, static fn (): int => 1700000000);
+        $auth = new ConnectorAuthenticator($config, $credentials, $nonces, $logs, $this->clock(1700000000));
 
         $headers = HmacSigner::headers('tradesmen-tools', 'key-1', 'secret-1', 'GET', '/api/security-center/v1/health', '', 1700000000, 'nonce-1');
         $result = $auth->authenticate('GET', '/api/security-center/v1/health', $headers, '', '203.0.113.10', 'test-agent');
@@ -41,7 +42,7 @@ final class AuthenticatorTest extends TestCase
         ]);
         $nonces = new InMemoryNonceStore();
         $logs = new ArrayAccessLog();
-        $auth = new ConnectorAuthenticator($config, $credentials, $nonces, $logs, static fn (): int => 1700000000);
+        $auth = new ConnectorAuthenticator($config, $credentials, $nonces, $logs, $this->clock(1700000000));
 
         $headers = HmacSigner::headers('tradesmen-tools', 'key-1', 'secret-1', 'GET', '/api/security-center/v1/health', '', 1700000000, 'nonce-1');
 
@@ -56,7 +57,7 @@ final class AuthenticatorTest extends TestCase
             new InMemoryCredentialStore([]),
             new InMemoryNonceStore(),
             new ArrayAccessLog(),
-            static fn (): int => 1700000000,
+            $this->clock(1700000000),
         );
 
         $result = $auth->authenticate('GET', '/api/security-center/v1/health', [], '', null, null);
@@ -78,6 +79,14 @@ final class AuthenticatorTest extends TestCase
             public function nonceTtlSeconds(): int { return $this->ttl; }
             public function baseUrl(): string { return 'https://tools.example.com'; }
             public function securityCenterUrl(): string { return 'https://security.example.com'; }
+        };
+    }
+
+    private function clock(int $now): ClockInterface
+    {
+        return new class($now) implements ClockInterface {
+            public function __construct(private int $now) {}
+            public function now(): int { return $this->now; }
         };
     }
 }
