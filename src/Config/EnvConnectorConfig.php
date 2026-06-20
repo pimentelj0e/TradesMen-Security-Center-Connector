@@ -118,6 +118,34 @@ final class EnvConnectorConfig implements ExtendedConnectorConfigInterface
     }
 
     /** @return list<string> */
+    public function defaultAllowedIps(): array
+    {
+        return $this->env->csvList(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_DEFAULT_ALLOWED_IPS);
+    }
+
+    /** @return list<string> */
+    public function trustedProxyCidrs(): array
+    {
+        return $this->env->csvList(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_TRUSTED_PROXY_CIDRS);
+    }
+
+    /** @return list<string> */
+    public function clientIpHeaders(): array
+    {
+        return $this->env->csvList(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_CLIENT_IP_HEADERS);
+    }
+
+    public function accessLogRetentionDays(): int
+    {
+        return $this->env->int(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_ACCESS_LOG_RETENTION_DAYS, 30);
+    }
+
+    public function nonceLogRetentionSeconds(): int
+    {
+        return $this->env->int(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_LOG_RETENTION_SECONDS, 86400);
+    }
+
+    /** @return list<string> */
     public function scopes(): array
     {
         return $this->env->csvList(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_SCOPES);

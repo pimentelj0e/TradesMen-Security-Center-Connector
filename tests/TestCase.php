@@ -121,6 +121,15 @@ class TestCase
         return 'SECURITY' . '_CENTER_' . $suffix;
     }
 
+    /**
+     * Build the legacy `FEATURE_SECURITY_CENTER_API` flag name at runtime, for
+     * the same reason as {@see legacyTscName()}.
+     */
+    protected function legacyFeatureFlagName(): string
+    {
+        return 'FEATURE' . '_SECURITY_CENTER_' . 'API';
+    }
+
     public function assertions(): int
     {
         return $this->assertions;

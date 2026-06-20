@@ -56,6 +56,30 @@ final class EnvConnectorConfigTest extends TestCase
         $this->assertSame(10, $config->heartbeatTimeoutSeconds(), 'heartbeat timeout default');
         $this->assertFalse($config->requireIpAllowlist(), 'ip allowlist not required by default');
         $this->assertSame([], $config->allowedIps(), 'no allowed ips by default');
+        $this->assertSame([], $config->defaultAllowedIps(), 'no default allowed ips by default');
+        $this->assertSame([], $config->trustedProxyCidrs(), 'no trusted proxy cidrs by default');
+        $this->assertSame([], $config->clientIpHeaders(), 'no client ip headers trusted by default');
+        $this->assertSame(30, $config->accessLogRetentionDays(), 'access log retention defaults to 30 days');
+        $this->assertSame(86400, $config->nonceLogRetentionSeconds(), 'nonce log retention defaults to 86400 seconds');
+
+        $this->clearConnectorEnv();
+    }
+
+    public function testReadsExtendedIpAndRetentionSettings(): void
+    {
+        $this->clearConnectorEnv();
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_DEFAULT_ALLOWED_IPS, '203.0.113.0/24, 198.51.100.10');
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_TRUSTED_PROXY_CIDRS, '10.0.0.0/8');
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_CLIENT_IP_HEADERS, 'X-Forwarded-For, X-Real-IP');
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_ACCESS_LOG_RETENTION_DAYS, '90');
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_LOG_RETENTION_SECONDS, '3600');
+
+        $config = new EnvConnectorConfig();
+        $this->assertSame(['203.0.113.0/24', '198.51.100.10'], $config->defaultAllowedIps(), 'default allowed ips parsed');
+        $this->assertSame(['10.0.0.0/8'], $config->trustedProxyCidrs(), 'trusted proxy cidrs parsed');
+        $this->assertSame(['X-Forwarded-For', 'X-Real-IP'], $config->clientIpHeaders(), 'client ip headers parsed');
+        $this->assertSame(90, $config->accessLogRetentionDays(), 'access log retention parsed');
+        $this->assertSame(3600, $config->nonceLogRetentionSeconds(), 'nonce log retention parsed');
 
         $this->clearConnectorEnv();
     }

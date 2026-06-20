@@ -29,6 +29,35 @@ interface ExtendedConnectorConfigInterface extends ConnectorConfigInterface
 
     public function requireIpAllowlist(): bool;
 
+    /**
+     * Default allowed IPs applied when no per-credential allowlist is configured.
+     *
+     * @return list<string>
+     */
+    public function defaultAllowedIps(): array;
+
+    /**
+     * Trusted proxy CIDRs. Only requests forwarded through one of these may have
+     * their client IP derived from {@see clientIpHeaders()}.
+     *
+     * @return list<string>
+     */
+    public function trustedProxyCidrs(): array;
+
+    /**
+     * Ordered client-IP header names the host may consult when behind a trusted
+     * proxy (e.g. X-Forwarded-For). Empty means: trust only the socket peer.
+     *
+     * @return list<string>
+     */
+    public function clientIpHeaders(): array;
+
+    /** Retention window, in days, for connector access logs. */
+    public function accessLogRetentionDays(): int;
+
+    /** Retention window, in seconds, for replay-protection nonce records. */
+    public function nonceLogRetentionSeconds(): int;
+
     /** @return list<string> */
     public function scopes(): array;
 }

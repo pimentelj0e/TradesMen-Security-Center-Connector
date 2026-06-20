@@ -46,6 +46,26 @@ final class EnvResolverTest extends TestCase
         $this->clearConnectorEnv();
     }
 
+    public function testLegacyApiKeyAndTokenAliasesAreIgnored(): void
+    {
+        $this->clearConnectorEnv();
+        $apiKey = $this->legacySecurityCenterName('API_KEY');
+        $token = $this->legacySecurityCenterName('TOKEN');
+        $featureFlag = $this->legacyFeatureFlagName();
+        $this->setEnv($apiKey, 'legacy-api-key');
+        $this->setEnv($token, 'legacy-token');
+        $this->setEnv($featureFlag, 'true');
+
+        $env = new EnvResolver();
+        // None of these legacy names back any canonical credential value.
+        $this->assertNull($env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_SHARED_SECRET), 'SECURITY_CENTER_API_KEY is not read');
+        $this->assertNull($env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_KEY_ID), 'SECURITY_CENTER_TOKEN is not read');
+        $this->assertFalse($env->bool(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_CONNECTOR_ENABLED, false), 'FEATURE_SECURITY_CENTER_API does not enable the connector');
+
+        $this->clearEnv($apiKey, $token, $featureFlag);
+        $this->clearConnectorEnv();
+    }
+
     public function testCanonicalWinsAndLegacyNamesDoNotLeak(): void
     {
         $this->clearConnectorEnv();
