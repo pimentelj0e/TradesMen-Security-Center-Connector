@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace TradesMen\SecurityCenterConnector\Config;
 
+use RuntimeException;
+
 /**
  * Reads connector configuration from the process environment.
  *
- * Resolution prefers the canonical TRADESMEN_SECURITY_CENTER_* name, then the
- * TSC_* alias, then any documented SECURITY_CENTER_* / APP_* alias. Values are
- * read from getenv(), $_ENV, and $_SERVER (in that order) so the resolver works
- * across CLI, FPM, and framework bootstraps.
+ * Only the canonical TRADESMEN_SECURITY_CENTER_* names are read. There is no
+ * fallback to legacy TSC_* or SECURITY_CENTER_* names. Values are read from
+ * getenv(), $_ENV, and $_SERVER (in that order) so the resolver works across
+ * CLI, FPM, and framework bootstraps.
  *
  * The resolver never prints, echoes, or logs a value; secrets pass through
  * untouched and are only returned to the caller.
@@ -64,30 +66,33 @@ final class EnvResolver
     }
 
     /**
-     * Resolve a canonical name through its alias chain, returning the value and
-     * the env name it came from.
-     *
-     * @return array{0: ?string, 1: ?string} [value, sourceName]
+     * Optional canonical value, or the default when unset.
      */
-    public function resolveWithSource(string $canonical, bool $allowEmpty = false): array
+    public function optional(string $canonical, ?string $default = null, bool $allowEmpty = false): ?string
     {
-        foreach (ConnectorEnvNames::candidates($canonical) as $name) {
-            $value = $this->raw($name, $allowEmpty);
-            if ($value !== null) {
-                return [$value, $name];
-            }
-        }
-
-        return [null, null];
+        return $this->raw($canonical, $allowEmpty) ?? $default;
     }
 
     /**
-     * String value for a canonical name (alias-aware), or the default.
+     * Required canonical value. Throws an operator-safe error (no value or env
+     * name detail) when the canonical name is unset.
+     */
+    public function required(string $canonical): string
+    {
+        $value = $this->raw($canonical);
+        if ($value === null) {
+            throw new RuntimeException('required_env_missing');
+        }
+
+        return $value;
+    }
+
+    /**
+     * String value for a canonical name, or the default.
      */
     public function string(string $canonical, ?string $default = null, bool $allowEmpty = false): ?string
     {
-        [$value] = $this->resolveWithSource($canonical, $allowEmpty);
-        return $value ?? $default;
+        return $this->optional($canonical, $default, $allowEmpty);
     }
 
     /**
@@ -95,7 +100,7 @@ final class EnvResolver
      */
     public function bool(string $canonical, bool $default = false): bool
     {
-        [$value] = $this->resolveWithSource($canonical);
+        $value = $this->raw($canonical);
         if ($value === null) {
             return $default;
         }
@@ -112,23 +117,16 @@ final class EnvResolver
     }
 
     /**
-     * Integer value. Honours minute-based aliases by converting to seconds.
+     * Integer value for a canonical name, or the default.
      */
     public function int(string $canonical, int $default = 0): int
     {
-        [$value, $source] = $this->resolveWithSource($canonical);
+        $value = $this->raw($canonical);
         if ($value === null || !preg_match('/^-?\d+$/', $value)) {
             return $default;
         }
 
-        $result = (int) $value;
-
-        $multiplier = ConnectorEnvNames::minuteAliases()[$source] ?? null;
-        if ($multiplier !== null) {
-            $result *= $multiplier;
-        }
-
-        return $result;
+        return (int) $value;
     }
 
     /**
@@ -138,7 +136,7 @@ final class EnvResolver
      */
     public function csvList(string $canonical): array
     {
-        [$value] = $this->resolveWithSource($canonical);
+        $value = $this->raw($canonical);
         if ($value === null) {
             return [];
         }

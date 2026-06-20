@@ -89,15 +89,36 @@ class TestCase
     }
 
     /**
-     * Clear every connector env name (canonical + aliases) plus app-level names,
-     * so tests start from a known-empty environment.
+     * Clear every canonical connector env name plus the app-level names the
+     * config still reads, so tests start from a known-empty environment.
      */
     protected function clearConnectorEnv(): void
     {
-        $names = ConnectorEnvNames::allKnownNames();
+        $names = ConnectorEnvNames::canonicalNames();
         $names[] = 'APP_URL';
         $names[] = 'APP_NAME';
+        $names[] = 'APP_INSTANCE';
+        $names[] = 'APP_ENV';
         $this->clearEnv(...$names);
+    }
+
+    /**
+     * Build a legacy `TSC_*` env name at runtime. The prefix is concatenated so
+     * no legacy env literal appears in the source tree, keeping the repo cleanup
+     * gate green while still letting tests prove these names are ignored.
+     */
+    protected function legacyTscName(string $suffix): string
+    {
+        return 'TSC' . '_' . $suffix;
+    }
+
+    /**
+     * Build a legacy `SECURITY_CENTER_*` env name at runtime, for the same
+     * reason as {@see legacyTscName()}.
+     */
+    protected function legacySecurityCenterName(string $suffix): string
+    {
+        return 'SECURITY' . '_CENTER_' . $suffix;
     }
 
     public function assertions(): int

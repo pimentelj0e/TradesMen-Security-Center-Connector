@@ -85,37 +85,22 @@ stored:
 `env` is the default. Apps that need managed credentials (such as Network)
 override the mode to `managed_db`.
 
-### Backward-compatible aliases
+### Env naming rules
 
-The old names remain supported so existing apps keep working. Resolution order
-is always: canonical first, then `TSC_*`, then a documented app-specific legacy
-alias.
-
-| Canonical (`TRADESMEN_SECURITY_CENTER_*`) | `TSC_*` alias | Legacy app alias |
-| --- | --- | --- |
-| `…_CONNECTOR_ENABLED` | `TSC_CONNECTOR_ENABLED` | `SECURITY_CENTER_CONNECTOR_ENABLED` |
-| `…_APP_ID` | `TSC_APP_ID` | `SECURITY_CENTER_APP_ID` |
-| `…_INSTANCE` | `TSC_INSTANCE` | `APP_INSTANCE` |
-| `…_ENVIRONMENT` | `TSC_ENVIRONMENT` | `APP_ENV` |
-| `…_ALLOWED_CLOCK_SKEW_SECONDS` | `TSC_ALLOWED_CLOCK_SKEW_SECONDS` | `SECURITY_CENTER_SIGNATURE_TTL_SECONDS` |
-| `…_NONCE_TTL_SECONDS` | `TSC_NONCE_TTL_SECONDS`, `TSC_CONNECTOR_NONCE_TTL_SECONDS` | `SECURITY_CENTER_NONCE_TTL_SECONDS`, `SECURITY_CENTER_NONCE_RETENTION_MINUTES` (minutes → seconds) |
-| `…_KEY_ID` | `TSC_KEY_ID` | — |
-| `…_SHARED_SECRET` | `TSC_SHARED_SECRET` | — |
-| `…_SCOPES` | `TSC_SCOPES` | — |
-| `…_ALLOWED_IPS` | `TSC_ALLOWED_IPS` | `SECURITY_CENTER_DEFAULT_ALLOWED_IPS` |
-| `…_REQUIRE_IP_ALLOWLIST` | `TSC_REQUIRE_IP_ALLOWLIST` | `SECURITY_CENTER_REQUIRE_IP_ALLOWLIST` |
-| `…_URL` | `TSC_SECURITY_CENTER_URL` | `SECURITY_CENTER_HEARTBEAT_URL` |
-| `…_HEARTBEAT_ENABLED` | `TSC_HEARTBEAT_ENABLED` | `SECURITY_CENTER_HEARTBEAT_ENABLED` |
-| `…_HEARTBEAT_INTERVAL_SECONDS` | `TSC_HEARTBEAT_INTERVAL_SECONDS` | `SECURITY_CENTER_HEARTBEAT_INTERVAL_SECONDS` |
-| `…_HEARTBEAT_TIMEOUT_SECONDS` | `TSC_HEARTBEAT_TIMEOUT_SECONDS` | `SECURITY_CENTER_HEARTBEAT_TIMEOUT_SECONDS` |
-| `…_CONNECTOR_TOKEN` | `TSC_CONNECTOR_TOKEN` | — |
+- `TRADESMEN_SECURITY_CENTER_*` is the **only** supported env prefix. The legacy
+  `TSC_*` and `SECURITY_CENTER_*` names are no longer read — set the canonical
+  names instead.
+- `app_id` (`TRADESMEN_SECURITY_CENTER_APP_ID`) is the canonical app slug only,
+  e.g. `tradesmen-tools`.
+- `instance` (`TRADESMEN_SECURITY_CENTER_INSTANCE`) is where the deployment
+  identity goes, e.g. `production`, `staging`, `rpi5-dev`, or `vps1`.
 
 The monitored app base URL is read from `APP_URL`.
 
-**Important:** the old `TSC_*` and `SECURITY_CENTER_*` names are **env aliases
-only**. The signed HTTP protocol is unchanged — the wire headers remain
-`X-TSC-*` and the connector token body prefix remains `tsc1_` for cross-app
-compatibility.
+**Important:** the `X-TSC-*` values are **protocol headers**, not env variables.
+The signed HTTP protocol is unchanged — the wire headers remain `X-TSC-*` and the
+connector token body prefix remains `tsc1_` for cross-app compatibility. Only the
+env naming changed.
 
 ## Local path repository usage
 

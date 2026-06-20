@@ -97,13 +97,25 @@ final class EnvConnectorConfigTest extends TestCase
         $this->clearConnectorEnv();
     }
 
-    public function testInstanceAliasFromAppInstance(): void
+    public function testInstanceReadsCanonicalOnly(): void
+    {
+        $this->clearConnectorEnv();
+        $this->setEnv('APP_INSTANCE', 'node-7');
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_INSTANCE, 'vps1');
+
+        $config = new EnvConnectorConfig();
+        $this->assertSame('vps1', $config->instance(), 'instance resolves only from the canonical name');
+
+        $this->clearConnectorEnv();
+    }
+
+    public function testLegacyInstanceAliasIsIgnored(): void
     {
         $this->clearConnectorEnv();
         $this->setEnv('APP_INSTANCE', 'node-7');
 
         $config = new EnvConnectorConfig();
-        $this->assertSame('node-7', $config->instance(), 'instance resolves from APP_INSTANCE alias');
+        $this->assertSame('', $config->instance(), 'legacy APP_INSTANCE alias is not read');
 
         $this->clearConnectorEnv();
     }

@@ -6,11 +6,8 @@ final class ConnectorTokenFactory
     /** Token body prefix. Kept stable for cross-app compatibility. */
     public const PREFIX = 'tsc1_';
 
-    /** Canonical env wrapper emitted by default. */
+    /** Canonical env wrapper. The only wrapper emitted. */
     public const ENV_PREFIX = 'TRADESMEN_SECURITY_CENTER_CONNECTOR_TOKEN=';
-
-    /** Legacy env wrapper, emitted only when explicitly requested. */
-    public const LEGACY_ENV_PREFIX = 'TSC_CONNECTOR_TOKEN=';
 
     /**
      * Expected connector token payload fields. The factory itself stays a thin
@@ -39,12 +36,9 @@ final class ConnectorTokenFactory
      * Encode a connector token.
      *
      * @param array<string, mixed> $payload
-     * @param bool $wrapEnv       Wrap the token in an env assignment line.
-     * @param bool $legacyWrapper Emit the legacy TSC_CONNECTOR_TOKEN= wrapper
-     *                            instead of the canonical one. Ignored when
-     *                            $wrapEnv is false.
+     * @param bool $wrapEnv Wrap the token in the canonical env assignment line.
      */
-    public static function issue(array $payload, bool $wrapEnv = true, bool $legacyWrapper = false): string
+    public static function issue(array $payload, bool $wrapEnv = true): string
     {
         $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
         if (!is_string($json)) {
@@ -57,7 +51,6 @@ final class ConnectorTokenFactory
             return $token;
         }
 
-        $prefix = $legacyWrapper ? self::LEGACY_ENV_PREFIX : self::ENV_PREFIX;
-        return $prefix . $token;
+        return self::ENV_PREFIX . $token;
     }
 }

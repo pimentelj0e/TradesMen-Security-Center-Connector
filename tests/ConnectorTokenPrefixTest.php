@@ -38,12 +38,13 @@ final class ConnectorTokenPrefixTest extends TestCase
         );
     }
 
-    public function testFactoryEmitsLegacyWrapperOnRequest(): void
+    public function testFactoryNeverEmitsLegacyWrapper(): void
     {
-        $token = ConnectorTokenFactory::issue($this->payload(), true, true);
-        $this->assertTrue(
-            str_starts_with($token, 'TSC_CONNECTOR_TOKEN=tsc1_'),
-            'legacy wrapper emitted when explicitly requested',
+        $token = ConnectorTokenFactory::issue($this->payload());
+        $legacyWrapper = $this->legacyTscName('CONNECTOR_TOKEN') . '=';
+        $this->assertFalse(
+            str_starts_with($token, $legacyWrapper),
+            'factory never emits the legacy connector token wrapper',
         );
     }
 
@@ -63,11 +64,26 @@ final class ConnectorTokenPrefixTest extends TestCase
         $this->assertSame('node-1', $parsed['instance'], 'instance round trips');
     }
 
-    public function testParserAcceptsLegacyWrapper(): void
+    public function testParserRejectsLegacyTscWrapper(): void
     {
-        $token = ConnectorTokenFactory::issue($this->payload(), true, true);
-        $parsed = ConnectorTokenParser::parse($token, 1700000001);
-        $this->assertSame('tradesmen-tools', $parsed['app_id'], 'legacy wrapper parses');
+        $bare = ConnectorTokenFactory::issue($this->payload(), false);
+        $legacy = $this->legacyTscName('CONNECTOR_TOKEN') . '=' . $bare;
+        $this->assertThrows(
+            'unrecognized_token_wrapper',
+            static fn () => ConnectorTokenParser::parse($legacy, 1700000001),
+            'legacy TSC connector token wrapper rejected',
+        );
+    }
+
+    public function testParserRejectsLegacySecurityCenterWrapper(): void
+    {
+        $bare = ConnectorTokenFactory::issue($this->payload(), false);
+        $legacy = $this->legacySecurityCenterName('CONNECTOR_TOKEN') . '=' . $bare;
+        $this->assertThrows(
+            'unrecognized_token_wrapper',
+            static fn () => ConnectorTokenParser::parse($legacy, 1700000001),
+            'legacy SECURITY_CENTER connector token wrapper rejected',
+        );
     }
 
     public function testParserAcceptsBareToken(): void
