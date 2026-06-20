@@ -25,4 +25,31 @@ final class ScopeRegistryTest extends TestCase
         $this->assertTrue($r->granted(['queues'], 'queue:read'), 'queues alias grants queue read');
         $this->assertFalse($r->granted(['version:read'], 'health:read'), 'version does not grant health');
     }
+
+    public function testCanonicalScopesIncludeFullSet(): void
+    {
+        $r = new ScopeRegistry();
+        $expected = [
+            'manifest:read', 'health:read', 'status:read', 'server:read', 'database:read',
+            'cache:read', 'queue:read', 'workers:read', 'deployments:read',
+            'security_summary:read', 'config_check:read', 'version:read', 'heartbeat:write',
+        ];
+        foreach ($expected as $scope) {
+            $this->assertContains($scope, $r->canonicalScopes(), 'canonical scope present: ' . $scope);
+            $this->assertTrue($r->isCanonical($scope), 'scope reported canonical: ' . $scope);
+        }
+    }
+
+    public function testDatabaseAndCacheEndpointScopes(): void
+    {
+        $r = new ScopeRegistry();
+        $this->assertSame('database:read', $r->requiredScope('/api/security-center/v1/database'), 'database scope');
+        $this->assertSame('cache:read', $r->requiredScope('/api/security-center/v1/cache'), 'cache scope');
+    }
+
+    public function testHeartbeatAliasNormalizes(): void
+    {
+        $r = new ScopeRegistry();
+        $this->assertSame('heartbeat:write', $r->normalize('heartbeat'), 'heartbeat alias normalizes');
+    }
 }

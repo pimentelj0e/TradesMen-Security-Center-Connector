@@ -23,7 +23,7 @@ final class TokenTest extends TestCase
         ];
 
         $token = ConnectorTokenFactory::issue($payload);
-        $this->assertTrue(str_starts_with($token, 'TSC_CONNECTOR_TOKEN=tsc1_'), 'env-wrapped token prefix');
+        $this->assertTrue(str_starts_with($token, 'TRADESMEN_SECURITY_CENTER_CONNECTOR_TOKEN=tsc1_'), 'env-wrapped token prefix');
 
         $parsed = ConnectorTokenParser::parse($token, 1700000001);
         $this->assertSame('tradesmen-tools', $parsed['app_id'], 'app id round trips');

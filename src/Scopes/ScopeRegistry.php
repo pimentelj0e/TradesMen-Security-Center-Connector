@@ -3,11 +3,35 @@ declare(strict_types=1);
 namespace TradesMen\SecurityCenterConnector\Scopes;
 final class ScopeRegistry
 {
+    /**
+     * Canonical connector scopes supported across the ecosystem.
+     *
+     * @var list<string>
+     */
+    private const CANONICAL_SCOPES = [
+        'manifest:read',
+        'health:read',
+        'status:read',
+        'server:read',
+        'database:read',
+        'cache:read',
+        'queue:read',
+        'workers:read',
+        'deployments:read',
+        'security_summary:read',
+        'config_check:read',
+        'version:read',
+        'heartbeat:write',
+    ];
+
     private const ENDPOINT_SCOPES = [
         'manifest' => 'manifest:read',
         'health' => 'health:read',
         'status' => 'status:read',
         'server' => 'server:read',
+        'database' => 'database:read',
+        'cache' => 'cache:read',
+        'queue' => 'queue:read',
         'queues' => 'queue:read',
         'workers' => 'workers:read',
         'deployments' => 'deployments:read',
@@ -21,6 +45,8 @@ final class ScopeRegistry
         'health' => 'health:read',
         'status' => 'status:read',
         'server' => 'server:read',
+        'database' => 'database:read',
+        'cache' => 'cache:read',
         'queues' => 'queue:read',
         'queue' => 'queue:read',
         'workers' => 'workers:read',
@@ -63,8 +89,14 @@ final class ScopeRegistry
         return in_array($this->normalize($requiredScope), $this->normalizeList($grantedScopes), true);
     }
 
+    /** @return list<string> */
     public function canonicalScopes(): array
     {
-        return array_values(array_unique(array_merge(array_values(self::ENDPOINT_SCOPES), ['heartbeat:write'])));
+        return self::CANONICAL_SCOPES;
+    }
+
+    public function isCanonical(string $scope): bool
+    {
+        return in_array($this->normalize($scope), self::CANONICAL_SCOPES, true);
     }
 }
