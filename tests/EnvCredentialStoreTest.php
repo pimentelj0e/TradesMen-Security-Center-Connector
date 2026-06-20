@@ -95,18 +95,27 @@ final class EnvCredentialStoreTest extends TestCase
         $this->clearConnectorEnv();
     }
 
-    public function testTscAliasesAccepted(): void
+    public function testLegacyAliasesAreIgnored(): void
     {
         $this->clearConnectorEnv();
-        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_CONNECTOR_ENABLED, 'true');
-        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID, 'tradesmen-tools');
-        $this->setEnv('TSC_KEY_ID', self::KEY_ID);
-        $this->setEnv('TSC_SHARED_SECRET', self::SECRET);
+        $this->enableEnvMode();
+        // Only legacy names are set; the store must not read them.
+        $legacy = [
+            $this->legacyTscName('KEY_ID'),
+            $this->legacyTscName('SHARED_SECRET'),
+            $this->legacySecurityCenterName('KEY_ID'),
+            $this->legacySecurityCenterName('SHARED_SECRET'),
+        ];
+        $this->setEnv($legacy[0], self::KEY_ID);
+        $this->setEnv($legacy[1], self::SECRET);
+        $this->setEnv($legacy[2], self::KEY_ID);
+        $this->setEnv($legacy[3], self::SECRET);
 
         $store = new EnvCredentialStore(new EnvConnectorConfig());
-        $credential = $store->findActive('tradesmen-tools', self::KEY_ID);
-        $this->assertTrue($credential !== null, 'credential resolved from TSC_* aliases');
+        $this->assertNull($store->findActive('tradesmen-tools', self::KEY_ID), 'legacy TSC_*/SECURITY_CENTER_* names are not read');
+        $this->assertSame('connector_env_credentials_missing', $store->error(), 'missing canonical credentials reported as safe error');
 
+        $this->clearEnv(...$legacy);
         $this->clearConnectorEnv();
     }
 

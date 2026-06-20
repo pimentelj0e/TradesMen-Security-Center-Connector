@@ -14,8 +14,8 @@ use TradesMen\SecurityCenterConnector\Contracts\ExtendedConnectorConfigInterface
  * that already consumes the base interface, while exposing the additional
  * universal-connector settings as extra methods.
  *
- * All reads go through {@see EnvResolver}, which honours the canonical names and
- * their legacy aliases. No value is ever printed or logged.
+ * All reads go through {@see EnvResolver}, which reads only the canonical
+ * TRADESMEN_SECURITY_CENTER_* names. No value is ever printed or logged.
  */
 final class EnvConnectorConfig implements ExtendedConnectorConfigInterface
 {

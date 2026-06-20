@@ -9,50 +9,70 @@ use TradesMen\SecurityCenterConnector\Config\EnvResolver;
 
 final class EnvResolverTest extends TestCase
 {
-    public function testCanonicalWinsOverTscAndSecurityCenter(): void
+    public function testReadsCanonicalName(): void
     {
         $this->clearConnectorEnv();
-        $this->setEnv('SECURITY_CENTER_APP_ID', 'legacy-app');
-        $this->setEnv('TSC_APP_ID', 'tsc-app');
         $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID, 'canonical-app');
 
         $env = new EnvResolver();
-        $this->assertSame('canonical-app', $env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'canonical name wins');
+        $this->assertSame('canonical-app', $env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'canonical name resolves');
 
         $this->clearConnectorEnv();
     }
 
-    public function testTscAliasStillWorks(): void
+    public function testTscAliasIsIgnored(): void
     {
         $this->clearConnectorEnv();
-        $this->setEnv('TSC_APP_ID', 'tsc-app');
+        $legacy = $this->legacyTscName('APP_ID');
+        $this->setEnv($legacy, 'tsc-app');
 
         $env = new EnvResolver();
-        $this->assertSame('tsc-app', $env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'TSC_* alias resolves');
+        $this->assertNull($env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'TSC_* alias is not read');
 
+        $this->clearEnv($legacy);
         $this->clearConnectorEnv();
     }
 
-    public function testSecurityCenterLegacyFallbackOnlyWhereMapped(): void
+    public function testSecurityCenterAliasIsIgnored(): void
     {
         $this->clearConnectorEnv();
-        $this->setEnv('SECURITY_CENTER_APP_ID', 'legacy-app');
+        $legacy = $this->legacySecurityCenterName('APP_ID');
+        $this->setEnv($legacy, 'legacy-app');
 
         $env = new EnvResolver();
-        $this->assertSame('legacy-app', $env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'documented SECURITY_CENTER_* fallback resolves');
+        $this->assertNull($env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'SECURITY_CENTER_* alias is not read');
 
+        $this->clearEnv($legacy);
         $this->clearConnectorEnv();
     }
 
-    public function testEmptyStringIsTreatedAsUnset(): void
+    public function testCanonicalWinsAndLegacyNamesDoNotLeak(): void
     {
         $this->clearConnectorEnv();
+        $tsc = $this->legacyTscName('APP_ID');
+        $sc = $this->legacySecurityCenterName('APP_ID');
+        $this->setEnv($sc, 'legacy-app');
+        $this->setEnv($tsc, 'tsc-app');
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID, 'canonical-app');
+
+        $env = new EnvResolver();
+        $this->assertSame('canonical-app', $env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'only the canonical value is returned');
+
+        $this->clearEnv($tsc, $sc);
+        $this->clearConnectorEnv();
+    }
+
+    public function testEmptyCanonicalDoesNotFallBackToLegacy(): void
+    {
+        $this->clearConnectorEnv();
+        $legacy = $this->legacyTscName('APP_ID');
         $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID, '   ');
-        $this->setEnv('TSC_APP_ID', 'tsc-app');
+        $this->setEnv($legacy, 'tsc-app');
 
         $env = new EnvResolver();
-        $this->assertSame('tsc-app', $env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'empty canonical falls through to alias');
+        $this->assertNull($env->string(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'empty canonical does not fall through to any alias');
 
+        $this->clearEnv($legacy);
         $this->clearConnectorEnv();
     }
 
@@ -63,6 +83,39 @@ final class EnvResolverTest extends TestCase
 
         $env = new EnvResolver();
         $this->assertSame('', $env->raw(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_INSTANCE, true), 'empty returned when allowEmpty');
+
+        $this->clearConnectorEnv();
+    }
+
+    public function testRequiredReturnsCanonicalValue(): void
+    {
+        $this->clearConnectorEnv();
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID, 'canonical-app');
+
+        $env = new EnvResolver();
+        $this->assertSame('canonical-app', $env->required(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID), 'required resolves canonical');
+
+        $this->clearConnectorEnv();
+    }
+
+    public function testRequiredThrowsWhenUnset(): void
+    {
+        $this->clearConnectorEnv();
+        $env = new EnvResolver();
+        $this->assertThrows(
+            'required_env_missing',
+            static fn () => $env->required(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID),
+            'required throws an operator-safe error when unset',
+        );
+
+        $this->clearConnectorEnv();
+    }
+
+    public function testOptionalUsesDefault(): void
+    {
+        $this->clearConnectorEnv();
+        $env = new EnvResolver();
+        $this->assertSame('fallback', $env->optional(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_APP_ID, 'fallback'), 'optional returns default when unset');
 
         $this->clearConnectorEnv();
     }
@@ -82,21 +135,30 @@ final class EnvResolverTest extends TestCase
         $this->assertTrue($env->bool(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_CONNECTOR_ENABLED, true), 'default used when unset');
     }
 
-    public function testIntParsingAndMinutesConversion(): void
+    public function testIntParsing(): void
     {
         $this->clearConnectorEnv();
         $env = new EnvResolver();
 
         $this->assertSame(300, $env->int(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_TTL_SECONDS, 300), 'default int used when unset');
 
-        // Legacy minutes alias must convert to seconds.
-        $this->setEnv('SECURITY_CENTER_NONCE_RETENTION_MINUTES', '5');
-        $this->assertSame(300, $env->int(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_TTL_SECONDS, 0), '5 minutes becomes 300 seconds');
+        $this->setEnv(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_TTL_SECONDS, '120');
+        $this->assertSame(120, $env->int(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_TTL_SECONDS, 0), 'canonical seconds value read as-is');
 
-        // A seconds-based alias must NOT be multiplied.
-        $this->setEnv('TSC_NONCE_TTL_SECONDS', '120');
-        $this->assertSame(120, $env->int(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_TTL_SECONDS, 0), 'seconds alias not converted');
+        $this->clearConnectorEnv();
+    }
 
+    public function testIntIgnoresLegacyMinutesAlias(): void
+    {
+        $this->clearConnectorEnv();
+        $env = new EnvResolver();
+
+        // The legacy minutes alias must not be read or converted.
+        $legacy = $this->legacySecurityCenterName('NONCE_RETENTION_MINUTES');
+        $this->setEnv($legacy, '5');
+        $this->assertSame(0, $env->int(ConnectorEnvNames::TRADESMEN_SECURITY_CENTER_NONCE_TTL_SECONDS, 0), 'legacy minutes alias is ignored');
+
+        $this->clearEnv($legacy);
         $this->clearConnectorEnv();
     }
 

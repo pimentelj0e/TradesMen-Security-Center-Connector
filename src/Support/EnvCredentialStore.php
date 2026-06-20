@@ -15,10 +15,10 @@ use TradesMen\SecurityCenterConnector\Contracts\CredentialStoreInterface;
  * Credential store backed by the process environment, for connectors running in
  * {@see ConnectorMode::ENV} mode.
  *
- * Reads:
- *   - TRADESMEN_SECURITY_CENTER_KEY_ID        (alias TSC_KEY_ID)
- *   - TRADESMEN_SECURITY_CENTER_SHARED_SECRET (alias TSC_SHARED_SECRET)
- *   - TRADESMEN_SECURITY_CENTER_SCOPES        (alias TSC_SCOPES)
+ * Reads only the canonical names:
+ *   - TRADESMEN_SECURITY_CENTER_KEY_ID
+ *   - TRADESMEN_SECURITY_CENTER_SHARED_SECRET
+ *   - TRADESMEN_SECURITY_CENTER_SCOPES
  *
  * Validation rules:
  *   - key_id is a public identifier; shared_secret is secret.

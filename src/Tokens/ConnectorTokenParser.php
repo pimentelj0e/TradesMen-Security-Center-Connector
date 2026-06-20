@@ -8,11 +8,13 @@ final class ConnectorTokenParser
     public static function parse(string $raw, ?int $now = null): array
     {
         $token = trim($raw);
-        foreach ([ConnectorTokenFactory::ENV_PREFIX, ConnectorTokenFactory::LEGACY_ENV_PREFIX] as $prefix) {
-            if (str_starts_with($token, $prefix)) {
-                $token = trim(substr($token, strlen($prefix)));
-                break;
-            }
+        if (str_starts_with($token, ConnectorTokenFactory::ENV_PREFIX)) {
+            $token = trim(substr($token, strlen(ConnectorTokenFactory::ENV_PREFIX)));
+        }
+        // Reject any other ENV_NAME= wrapper (e.g. legacy connector token
+        // wrappers). Only the canonical wrapper or a bare tsc1_ token are valid.
+        if (preg_match('/^[A-Za-z][A-Za-z0-9_]*=/', $token)) {
+            throw new \InvalidArgumentException('unrecognized_token_wrapper');
         }
         if ($token === '' || strlen($token) > self::MAX_LENGTH) {
             throw new \InvalidArgumentException('invalid_token');
