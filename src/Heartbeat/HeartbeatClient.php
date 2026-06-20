@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace TradesMen\SecurityCenterConnector\Heartbeat;
 
+use TradesMen\SecurityCenterConnector\Config\EnvConnectorConfig;
 use TradesMen\SecurityCenterConnector\Contracts\HttpClientInterface;
 use TradesMen\SecurityCenterConnector\Protocol\HmacSigner;
+use TradesMen\SecurityCenterConnector\Support\EnvCredentialStore;
 
 final class HeartbeatClient
 {
@@ -15,6 +17,32 @@ final class HeartbeatClient
         private readonly mixed $clock,
         private readonly mixed $nonceFactory,
     ) {}
+
+    /**
+     * Convenience wrapper for env-mode apps: pulls the Security Center URL, app
+     * id, timeout and signing credential straight from config + credential
+     * store. The shared secret is only ever used to sign — it is never placed in
+     * the payload.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{status:int,body:string,error?:string}
+     */
+    public function sendFromConfig(EnvConnectorConfig $config, EnvCredentialStore $credentials, array $payload, ?int $timeoutSeconds = null): array
+    {
+        $credential = $credentials->current();
+        if ($credential === null) {
+            return ['status' => 0, 'body' => '', 'error' => $credentials->error() ?? 'missing_credential'];
+        }
+
+        return $this->send(
+            $config->securityCenterUrl(),
+            $config->appId(),
+            $credential->keyId,
+            $credential->secret,
+            $payload,
+            $timeoutSeconds ?? $config->heartbeatTimeoutSeconds(),
+        );
+    }
 
     public function send(string $securityCenterBaseUrl, string $appId, string $keyId, string $secret, array $payload, int $timeoutSeconds = 10): array
     {

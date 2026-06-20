@@ -8,8 +8,11 @@ final class ConnectorTokenParser
     public static function parse(string $raw, ?int $now = null): array
     {
         $token = trim($raw);
-        if (str_starts_with($token, ConnectorTokenFactory::ENV_PREFIX)) {
-            $token = substr($token, strlen(ConnectorTokenFactory::ENV_PREFIX));
+        foreach ([ConnectorTokenFactory::ENV_PREFIX, ConnectorTokenFactory::LEGACY_ENV_PREFIX] as $prefix) {
+            if (str_starts_with($token, $prefix)) {
+                $token = trim(substr($token, strlen($prefix)));
+                break;
+            }
         }
         if ($token === '' || strlen($token) > self::MAX_LENGTH) {
             throw new \InvalidArgumentException('invalid_token');
